@@ -60,7 +60,7 @@ function FormularioList() {
     return (
         <Layout>
             <div className="container">
-                <h2 className="text-center mt-5 mb-3">Listado</h2>
+                <h2 className="text-center mt-5 mb-3">Listado de Formularios</h2>
                 <div className="card">
                     <div className="card-header">
                         <Link
