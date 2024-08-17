@@ -6,24 +6,25 @@ import NotFound from "../components/NotFound"
 import { axiosInstance } from '../index';
 
 function CamposEdit() {
-    const [TipoFormularioList, setCamposList] = useState([])
-    const [formularioId, setFormularioId] = useState(useParams().id)
+    const [id, setId] = useState(useParams().id)
+    const [tipoDeFormulario, setTipoDeFormulario] = useState([])
+    const [formularioId, setFormularioId] = useState('');
     const [nombreCampo, setNombreCampo] = useState('');
-    const [tipoCampo, setTipoCampo] = useState('')
-    const [esRequerido, setEsRequerido] = useState('')
+    const [tipoCampo, setTipoCampo] = useState('');
+    const [esRequerido, setEsRequerido] = useState('');
     const [isSaving, setIsSaving] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
 
     const go = useNavigate();
 
     useEffect(() => {
-        fetchCamposList()
+        fetchTipoFormularioList()
     }, [])
 
-    const fetchCamposList = () => {
-        axiosInstance.get('/api/campo')
+    const fetchTipoFormularioList = () => {
+        axiosInstance.get('/api/formulario')
             .then(function (response) {
-                setCamposList(response.data.value);
+                setTipoDeFormulario(response.data.value);
                 console.log(response.data);
             })
             .catch(function (error) {
@@ -32,10 +33,8 @@ function CamposEdit() {
     }
 
     useEffect(() => {
-        axiosInstance.get(`/api/campo/obtenerCamposPorId/?campoId=${FormularioId}`)
+        axiosInstance.get(`/api/campo/obtenerCampoPorId?id=${id}`)
             .then(function (response) {
-                console.log(response);
-                console.log("response");
                 if (response.data.isSuccess === false) {
                     Swal.fire({
                         icon: 'error',
@@ -46,25 +45,12 @@ function CamposEdit() {
                     setIsSuccess(false);
                     return;
                 } else {
-                    let Permiso = response.data.value;
-                    setFormularioId(Permiso.FormularioId);
-                    setNombreCampo(Permiso.nombreEmpleado);
-                    setTipoCampo(Permiso.apellidoEmpleado);
-                    setFechaPermiso(Permiso.fechaPermiso);
-                    setEsRequerido(Permiso.tipoFormularioId);
-
-                    let fechaN = Permiso.fechaPermiso;
-                    // Crear un objeto Date a partir de la cadena de fecha ISO 8601
-                    const fecha = new Date(fechaN);
-
-                    // Obtener el año, mes y día
-                    const year = fecha.getFullYear();
-                    const month = String(fecha.getMonth() + 1).padStart(2, "0"); // Se agrega +1 porque los meses en JavaScript son de 0 a 11
-                    const day = String(fecha.getDate()).padStart(2, "0");
-
-                    // Formatear la fecha en el formato "yyyy-mm-dd"
-                    const fechaFormateada = `${year}-${month}-${day}`;
-                    setFechaPermiso(fechaFormateada);
+                    let campo = response.data.value;
+                    setFormularioId(campo.formularioId);
+                    setNombreCampo(campo.nombreCampo);
+                    setTipoCampo(campo.tipoCampo);
+                    let esRequeridoBool = esRequerido === true ? '1' : '0';
+                    setEsRequerido(esRequeridoBool);
                     setIsSuccess(true);
                 }
             })
@@ -81,64 +67,66 @@ function CamposEdit() {
 
     const handleSave = () => {
 
-        if (nombres === "") {
+        if (formularioId === "") {
             Swal.fire({
                 icon: 'error',
-                title: 'Ingrese Nombres!',
+                title: 'Seleccione Formulario!',
                 showConfirmButton: false,
                 timer: 1500
             })
             return;
         }
 
-        if (apellidos === "") {
+        if (nombreCampo === "") {
             Swal.fire({
                 icon: 'error',
-                title: 'Ingrese Apellidos!',
+                title: 'Ingrese nombre de campo!',
+                showConfirmButton: false,
+                timer: 1500
+            })
+            return;
+        }
+        
+        if (tipoCampo === "") {
+            Swal.fire({
+                icon: 'error',
+                title: 'Ingrese el tipo de campo!',
                 showConfirmButton: false,
                 timer: 1500
             })
             return;
         }
 
-        if (tipoFormularioId === "") {
+        if (esRequerido === "") {
             Swal.fire({
                 icon: 'error',
-                title: 'Seleccione Tipo de Permiso!',
+                title: 'Seleccione opción requerida!',
                 showConfirmButton: false,
                 timer: 1500
             })
             return;
         }
 
-        if (fechaPermiso === "") {
-            Swal.fire({
-                icon: 'error',
-                title: 'Ingrese Fecha de Permiso!',
-                showConfirmButton: false,
-                timer: 1500
-            })
-            return;
-        }
+        let esRequeridoBool = esRequerido === "1" ? true : false;
 
         setIsSaving(true);
-        axiosInstance.put(`/api/permiso/modificarPermiso`, {
-            Id: FormularioId,
-            NombreEmpleado: nombres,
-            ApellidoEmpleado: apellidos,
-            TipoFormularioId: tipoFormularioId,
-            FechaPermiso: fechaPermiso,
+        axiosInstance.put(`/api/campo/actualizarCampo`, {
+            id: id,
+            formularioId: formularioId,
+            nombreCampo: nombreCampo,
+            tipoCampo: tipoCampo,
+            esRequerido: esRequeridoBool
         })
             .then(function (response) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Permiso actualizado correctamente!',
+                    title: 'campo actualizado correctamente!',
                     showConfirmButton: false,
                     timer: 1500
                 })
                 setIsSaving(false);
 
-                go('/permisos');
+                go('/campos');
             })
             .catch(function (error) {
                 Swal.fire({
@@ -156,63 +144,67 @@ function CamposEdit() {
         <Layout>
             {isSuccess === true ?
                 <div className="container">
-                    <h2 className="text-center mt-5 mb-3">Editar Permiso</h2>
+                    <h2 className="text-center mt-5 mb-3">Editar campo</h2>
                     <div className="card">
                         <div className="card-header">
                             <Link
                                 className="btn btn-outline-info float-right"
-                                to="/Permisos">Ver todos los Permisos
+                                to="/campos">Ver todos los campos
                             </Link>
                         </div>
                         <div className="card-body">
                             <form>
-                                <div className="form-group">
-                                    <label htmlFor="nombres">Nombres</label>
-                                    <input
-                                        onChange={(event) => { setNombreCampo(event.target.value) }}
-                                        value={nombres}
-                                        type="text"
-                                        className="form-control"
-                                        id="nombres"
-                                        name="nombres" />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="apellidos">Apellidos</label>
-                                    <input
-                                        onChange={(event) => { setTipoCampo(event.target.value) }}
-                                        value={apellidos}
-                                        type="text"
-                                        className="form-control"
-                                        id="apellidos"
-                                        name="apellidos" />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="fechaPermiso">Fecha de Permiso</label>
-                                    <input
-                                        onChange={(event) => { setFechaPermiso(event.target.value) }}
-                                        value={fechaPermiso}
-                                        type="date"
-                                        className="form-control"
-                                        id="fechaPermiso"
-                                        name="fechaPermiso" />
-                                </div>
-                                <div className="form-group">
-                                    <label htmlFor="tipoFormularioId">Tipo Permiso</label>
+                            <div className="form-group">
+                                <label htmlFor="nombreCampo">Formulario</label>
                                     <select
-                                        id="tipoFormularioId"
-                                        name="tipoFormularioId"
-                                        value={tipoFormularioId}
-                                        onChange={(event) => { setEsRequerido(event.target.value) }}
+                                        id="formularioId"
+                                        name="formularioId"
+                                        value={formularioId}
+                                        onChange={(event) => { setFormularioId(event.target.value) }}
                                         className="form-control"
                                     >
-                                        <option value="">Seleccione Tipo de Permiso</option>
-                                        {TipoFormularioList.map((item) => (
+                                        <option value="">Seleccione el Tipo de Formulario</option>
+                                        {tipoDeFormulario.map((item) => (
                                             <option key={item.id} value={item.id}>
-                                                {item.descripcion}
+                                                {item.nombre}
                                             </option>
                                         ))}
                                     </select>
-                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="nombreCampo">Nombre del Campo</label>
+                                <input
+                                    onChange={(event) => { setNombreCampo(event.target.value) }}
+                                    value={nombreCampo}
+                                    type="text"
+                                    className="form-control"
+                                    id="nombreCampo"
+                                    name="nombreCampo" />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="tipoCampo">Tipo de Campo</label>
+                                <input
+                                    onChange={(event) => { setTipoCampo(event.target.value) }}
+                                    value={tipoCampo}
+                                    type="text"
+                                    className="form-control"
+                                    id="tipoCampo"
+                                    name="tipoCampo" />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="nombreCampo">Es Requerido</label>
+                                <select
+                                    id="esRequerido"
+                                    name="esRequerido"
+                                    value={esRequerido}
+                                    onChange={(event) => { setEsRequerido(event.target.value) }}
+                                    className="form-control"
+                                >
+                                    <option value="">Seleccione una opción</option>
+                                    <option value="1">Sí</option>
+                                    <option value="0">No</option>
+                                </select>
+                            </div>
                                 <button
                                     disabled={isSaving}
                                     onClick={handleSave}
